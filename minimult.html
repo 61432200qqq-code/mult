@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мини-мульт — Зеркало Души</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Georgia', serif;
+    background: #0a0618;
+    color: #e8d9a8;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+  .bg {
+    position: fixed; inset: 0; z-index: -3;
+    background: radial-gradient(ellipse at 20% 30%, rgba(80,40,120,0.4), transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(120,80,40,0.3), transparent 50%),
+                linear-gradient(180deg, #0a0618 0%, #1a0f3d 50%, #0a0618 100%);
+  }
+  .stars {
+    position: fixed; inset: 0; z-index: -2;
+    background-image: radial-gradient(1px 1px at 50px 80px, white, transparent),
+                      radial-gradient(1px 1px at 150px 40px, white, transparent),
+                      radial-gradient(1.2px 1.2px at 280px 120px, white, transparent),
+                      radial-gradient(0.7px 0.7px at 350px 60px, white, transparent),
+                      radial-gradient(1px 1px at 100px 200px, white, transparent);
+    background-size: 500px 400px;
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  @keyframes twinkle { 0%,100%{opacity:0.7;} 50%{opacity:1;} }
+  .mist {
+    position: fixed; bottom:0; left:0; width:100%; height:40%;
+    background: linear-gradient(to top, rgba(80,60,120,0.4), transparent);
+    filter: blur(20px); z-index: -1;
+    animation: drift 15s ease-in-out infinite alternate;
+  }
+  @keyframes drift { from { transform: translateX(-20px); } to { transform: translateX(20px); } }
+
+  .container {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 40px 20px 60px;
+  }
+  .header-title {
+    font-size: 30px; letter-spacing: 3px; color: #c9a86a;
+    text-shadow: 0 0 20px rgba(201,168,106,0.8);
+    margin-bottom: 10px; text-align: center; font-style: italic;
+  }
+  .header-sub {
+    font-size: 14px; color: #a89060; text-align: center;
+    margin-bottom: 30px; font-style: italic;
+  }
+  .frame {
+    position: relative; padding: 35px;
+    background: linear-gradient(135deg, #8a6a30 0%, #d4a850 25%, #8a6a30 50%, #d4a850 75%, #8a6a30 100%);
+    border-radius: 8px;
+    box-shadow: 0 0 60px rgba(201,168,106,0.4), inset 0 0 30px rgba(0,0,0,0.5);
+    max-width: 700px; width: 100%;
+  }
+  .frame::before { content: '☽ ✦ '; position: absolute; top: 8px; left: 50%;
+    transform: translateX(-50%); color: #2a1f3d; font-size: 18px; letter-spacing: 15px; }
+  .corner { position: absolute; width: 30px; height: 30px; border: 3px solid #2a1f3d; }
+  .corner.tl { top:15px; left:15px; border-right:none; border-bottom:none; }
+  .corner.tr { top:15px; right:15px; border-left:none; border-bottom:none; }
+  .corner.bl { bottom:15px; left:15px; border-right:none; border-top:none; }
+  .corner.br { bottom:15px; right:15px; border-left:none; border-top:none; }
+
+  .board {
+    background: linear-gradient(135deg, #1a0f3d 0%, #2a1f5d 50%, #1a0f3d 100%);
+    border: 2px solid #3a2a5d; border-radius: 4px;
+    padding: 40px; min-height: 400px;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.7);
+    position: relative; overflow: hidden;
+  }
+  .board::before { content:''; position:absolute; inset:0;
+    background: radial-gradient(ellipse at center, rgba(100,80,180,0.2), transparent 70%);
+    animation: pulse 3s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  .screen { position: relative; z-index: 2; }
+  .screen.hidden { display: none; }
+
+  .prompt {
+    font-size: 26px; text-align: center; color: #f0e6c0;
+    text-shadow: 0 0 15px rgba(240,230,192,0.6);
+    line-height: 1.5; font-style: italic; margin-bottom: 25px;
+  }
+  .intro-text {
+    font-size: 15px; text-align: center; color: #d4c090;
+    line-height: 1.6; margin-bottom: 25px;
+    padding: 15px; background: rgba(20,10,50,0.4);
+    border-radius: 4px; border: 1px solid #8a7040;
+  }
+  .disclaimer {
+    font-size: 12px; text-align: center; color: #a08060;
+    margin-bottom: 25px; font-style: italic;
+  }
+
+  .btn-start {
+    display: block; margin: 0 auto;
+    background: linear-gradient(135deg, #8a6a30, #d4a850, #8a6a30);
+    border: 2px solid #2a1f3d; color: #1a0f3d;
+    padding: 14px 40px; font-size: 18px;
+    font-family: 'Georgia', serif; font-weight: bold;
+    letter-spacing: 2px; cursor: pointer; border-radius: 4px;
+    transition: all 0.3s; text-transform: uppercase;
+  }
+  .btn-start:hover { box-shadow: 0 0 30px rgba(212,168,80,0.7); transform: scale(1.05); }
+
+  /* Экран вопросов */
+  .progress-container {
+    margin-bottom: 20px;
+  }
+  .progress-text {
+    text-align: center; font-size: 14px; color: #c9a86a;
+    margin-bottom: 8px;
+  }
+  .progress-bar {
+    width: 100%; height: 8px;
+    background: rgba(20,10,50,0.6);
+    border-radius: 4px; overflow: hidden;
+    border: 1px solid #8a7040;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8a6a30, #d4a850);
+    transition: width 0.4s ease;
+    box-shadow: 0 0 10px rgba(212,168,80,0.5);
+  }
+
+  .question-number {
+    text-align: center; font-size: 14px; color: #a89060;
+    margin-bottom: 10px; font-style: italic;
+  }
+  .question-text {
+    font-size: 22px; text-align: center; color: #f0e6c0;
+    line-height: 1.5; margin-bottom: 30px;
+    min-height: 80px;
+    text-shadow: 0 0 10px rgba(240,230,192,0.4);
+    padding: 20px;
+    background: rgba(20,10,50,0.3);
+    border-radius: 4px;
+  }
+  .answer-buttons {
+    display: flex; gap: 20px; justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn-answer {
+    padding: 14px 50px; font-size: 18px;
+    font-family: 'Georgia', serif; font-weight: bold;
+    cursor: pointer; border-radius: 4px;
+    transition: all 0.3s; letter-spacing: 2px;
+    border: 2px solid;
+  }
+  .btn-yes {
+    background: linear-gradient(135deg, #2a5a30, #4a9a50, #2a5a30);
+    border-color: #1a3f20; color: #e8f5e0;
+  }
+  .btn-yes:hover { box-shadow: 0 0 25px rgba(74,154,80,0.6); transform: scale(1.05); }
+  .btn-no {
+    background: linear-gradient(135deg, #5a2a30, #9a4a50, #5a2a30);
+    border-color: #3f1a20; color: #f5e0e0;
+  }
+  .btn-no:hover { box-shadow: 0 0 25px rgba(154,74,80,0.6); transform: scale(1.05); }
+
+  /* Экран результатов */
+  .result-title {
+    text-align: center; color: #d4a850; font-size: 26px;
+    margin-bottom: 20px; text-shadow: 0 0 15px rgba(212,168,80,0.6);
+    letter-spacing: 2px;
+  }
+  .chart-container {
+    background: rgba(20,10,50,0.5);
+    border: 1px solid #8a7040; border-radius: 4px;
+    padding: 20px; margin-bottom: 20px;
+  }
+  .chart-title {
+    text-align: center; color: #c9a86a; font-size: 16px;
+    margin-bottom: 15px; font-style: italic;
+  }
+  .scale-row {
+    display: flex; align-items: center; margin: 8px 0;
+    font-size: 13px;
+  }
+  .scale-label {
+    width: 140px; color: #e8d9a8; font-weight: bold;
+  }
+  .scale-bar-bg {
+    flex: 1; height: 20px;
+    background: rgba(10,6,24,0.6);
+    border-radius: 3px; position: relative;
+    border: 1px solid #4a3a5d;
+    overflow: hidden;
+  }
+  .scale-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4a9a50, #d4a850, #9a4a50);
+    transition: width 1s ease;
+    border-radius: 3px;
+  }
+  .scale-value {
+    width: 40px; text-align: right; color: #d4a850;
+    font-weight: bold; margin-left: 10px;
+  }
+  .threshold-line {
+    position: absolute; top: 0; bottom: 0;
+    width: 2px; background: #ff6060;
+    left: 50%;
+  }
+
+  .interpretation {
+    margin-top: 20px;
+  }
+  .interp-block {
+    margin: 12px 0; padding: 12px 15px;
+    border-left: 3px solid #8a60a0;
+    background: rgba(30,20,60,0.4);
+    border-radius: 0 4px 4px 0;
+  }
+  .interp-block strong { color: #d4a850; }
+  .interp-block.normal { border-left-color: #4a9a50; }
+  .interp-block.elevated { border-left-color: #d4a850; }
+  .interp-block.high { border-left-color: #ff8040; }
+  .interp-block.critical { border-left-color: #ff4040; }
+
+  .final-advice {
+    text-align: center; font-style: italic;
+    padding: 15px; margin-top: 20px;
+    background: rgba(40,30,70,0.5);
+    border: 1px solid #d4a850; border-radius: 4px;
+    color: #f0e6c0; line-height: 1.6;
+  }
+  .btn-restart {
+    display: block; margin: 20px auto 0;
+    background: linear-gradient(135deg, #3a2a5d, #6a4a9d, #3a2a5d);
+    border: 2px solid #8a7040; color: #f0e6c0;
+    padding: 12px 30px; font-size: 16px;
+    font-family: 'Georgia', serif; cursor: pointer;
+    border-radius: 4px; transition: all 0.3s;
+  }
+  .btn-restart:hover { box-shadow: 0 0 20px rgba(106,74,157,0.7); }
+
+  .symbol {
+    position: fixed; color: rgba(212,168,80,0.3);
+    font-size: 40px; z-index: 0;
+    animation: float 6s ease-in-out infinite;
+  }
+  .symbol.s1 { top: 20%; left: 8%; }
+  .symbol.s2 { top: 60%; left: 5%; animation-delay: 2s; }
+  .symbol.s3 { top: 30%; right: 8%; animation-delay: 1s; }
+  .symbol.s4 { top: 70%; right: 5%; animation-delay: 3s; }
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(10deg); }
+  }
+
+  @media (max-width: 768px) {
+    .container { padding: 20px; }
+    .frame { padding: 20px; }
+    .board { padding: 25px 15px; }
+    .prompt { font-size: 20px; }
+    .question-text { font-size: 18px; }
+    .symbol { display: none; }
+    .scale-label { width: 100px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="stars"></div>
+  <div class="mist"></div>
+  <div class="symbol s1">△</div>
+  <div class="symbol s2">⬡</div>
+  <div class="symbol s3">✧</div>
+  <div class="symbol s4">⊕</div>
+
+  <div class="container">
+    <div class="header-title">✦ МИНИ-МУЛЬТ ✦</div>
+    <div class="header-sub">Зеркало вашей души — 71 вопрос к внутреннему Я</div>
+
+    <div class="frame">
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+
+      <div class="board">
+        <!-- Экран приветствия -->
+        <div class="screen" id="screenIntro">
+          <div class="prompt">Ответьте на 71 вопрос<br>честно и без раздумий</div>
+          <div class="intro-text">
+            Мини-мульт — сокращенная версия знаменитого теста MMPI.<br>
+            Он раскрывает 8 граней вашей личности и показывает,<br>
+            какие внутренние силы ведут вас, а какие — тормозят.
+          </div>
+          <div class="disclaimer">
+            ⚠ Это инструмент самопознания, а не медицинский диагноз.<br>
+            Для профессиональной консультации обратитесь к психологу.
+          </div>
+          <button class="btn-start" onclick="startTest()">Начать путешествие</button>
+        </div>
+
+        <!-- Экран вопросов -->
+        <div class="screen hidden" id="screenQuestion">
+          <div class="progress-container">
+            <div class="progress-text" id="progressText">Вопрос 1 из 71</div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill" style="width:1.4%"></div>
+            </div>
+          </div>
+          <div class="question-number" id="questionNumber">Вопрос №1</div>
+          <div class="question-text" id="questionText">Загрузка...</div>
+          <div class="answer-buttons">
+            <button class="btn-answer btn-yes" onclick="answer(true)">ДА</button>
+            <button class="btn-answer btn-no" onclick="answer(false)">НЕТ</button>
+          </div>
+        </div>
+
+        <!-- Экран результатов -->
+        <div class="screen hidden" id="screenResult">
+          <div class="result-title">✦ ВАШ ПСИХОЛОГИЧЕСКИЙ ПОРТРЕТ ✦</div>
+          <div class="chart-container">
+            <div class="chart-title">Профиль личности (T-баллы)</div>
+            <div id="chartBars"></div>
+          </div>
+          <div class="interpretation" id="interpretation"></div>
+          <div class="final-advice" id="finalAdvice"></div>
+          <button class="btn-restart" onclick="location.reload()">Пройти заново</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// 71 вопрос Мини-мульт (адаптация Березина-Мирошникова)
+const questions = [
+  "У меня часто бывает головная боль.",
+  "Я часто чувствую себя подавленным.",
+  "Мне часто снятся кошмары.",
+  "У меня бывают приступы тошноты и рвоты.",
+  "Я всегда говорю правду.",
+  "Меня беспокоят боли в области сердца.",
+  "Мне кажется, что я ни на что не способен.",
+  "У меня часто бывают головокружения.",
+  "Мне трудно сосредоточиться на одном деле.",
+  "Я никогда не опаздываю на встречи.",
+  "У меня бывают боли в спине.",
+  "Я часто плачу без видимой причины.",
+  "Мне часто бывает стыдно за свои поступки.",
+  "Я часто чувствую себя уставшим без причины.",
+  "Я никогда не сержусь.",
+  "Меня мучают мысли, от которых трудно отделаться.",
+  "У меня часто бывает плохой сон.",
+  "Я часто чувствую себя одиноким.",
+  "У меня бывают приступы сильного сердцебиения.",
+  "Я всегда вежлив с людьми.",
+  "Мне часто кажется, что меня не понимают.",
+  "У меня бывают боли в желудке.",
+  "Я часто думаю о смерти.",
+  "Мне трудно принимать решения.",
+  "Я никогда не завидую другим.",
+  "Меня беспокоит мое здоровье.",
+  "Я часто чувствую тревогу без причины.",
+  "У меня бывают периоды сильного возбуждения.",
+  "Мне трудно ладить с людьми.",
+  "Я всегда выполняю свои обещания.",
+  "У меня бывают периоды, когда я ничего не хочу делать.",
+  "Меня легко обидеть.",
+  "Я часто чувствую себя неуверенно.",
+  "У меня бывают боли в суставах.",
+  "Я никогда не вру.",
+  "Мне трудно расслабиться.",
+  "Я часто чувствую себя несчастным.",
+  "У меня бывают периоды, когда я не могу уснуть.",
+  "Мне кажется, что люди относятся ко мне негативно.",
+  "Я всегда контролирую свои эмоции.",
+  "У меня бывают периоды апатии.",
+  "Меня беспокоит мое будущее.",
+  "Я часто чувствую себя раздраженным.",
+  "Мне трудно доверять людям.",
+  "Я никогда не испытываю страха.",
+  "У меня бывают периоды, когда я чувствую себя лучше всех.",
+  "Мне часто кажется, что жизнь бессмысленна.",
+  "Я часто чувствую себя виноватым.",
+  "Мне трудно общаться с незнакомыми людьми.",
+  "Я всегда остаюсь спокойным в трудных ситуациях.",
+  "У меня бывают периоды, когда я чувствую себя особенно энергичным.",
+  "Меня беспокоят мои отношения с близкими.",
+  "Я часто чувствую себя непонятым.",
+  "Мне трудно забыть обиды.",
+  "Я никогда не испытываю ревности.",
+  "У меня бывают периоды, когда я чувствую себя особенно уязвимым.",
+  "Меня беспокоит моя работа или учеба.",
+  "Я часто чувствую себя напряженным.",
+  "Мне трудно выражать свои чувства.",
+  "Я всегда доволен собой.",
+  "У меня бывают периоды, когда я чувствую себя особенно творческим.",
+  "Меня беспокоит мое финансовое положение.",
+  "Я часто чувствую себя разочарованным.",
+  "Мне трудно просить о помощи.",
+  "Я никогда не испытываю сомнений в себе.",
+  "У меня бывают периоды, когда я чувствую себя особенно одиноким.",
+  "Меня беспокоит мое прошлое.",
+  "Я часто чувствую себя непонятым близкими.",
+  "Мне трудно адаптироваться к переменам.",
+  "Я всегда уверен в своих силах.",
+  "У меня бывают периоды, когда я чувствую себя особенно вдохновленным."
+];
+
+// Ключи шкал: [номер_вопроса, направление] где true = "Да", false = "Нет"
+const keys = {
+  L:  [[5,true],[10,true],[15,true],[20,true],[25,true],[30,true],[35,true],[40,true],[45,true],[50,true],[55,true],[60,true],[65,true]],
+  F:  [[16,true],[27,true],[33,true],[39,true],[45,true],[51,true],[57,true],[63,true],[69,true]],
+  K:  [[17,false],[28,false],[34,false],[40,false],[46,false],[52,false],[58,false],[64,false],[70,false]],
+  Hs: [[1,true],[6,true],[11,true],[17,true],[22,true],[28,true],[34,true],[40,true],[46,true],[52,true],[58,true],[64,true]],
+  D:  [[2,true],[7,true],[12,true],[18,true],[23,true],[29,true],[35,true],[41,true],[47,true],[53,true],[59,true],[65,true]],
+  Hy: [[3,true],[8,true],[13,true],[19,true],[24,true],[30,true],[36,true],[42,true],[48,true],[54,true],[60,true],[66,true]],
+  Pd: [[4,true],[9,true],[14,true],[20,true],[25,true],[31,true],[37,true],[43,true],[49,true],[55,true],[61,true],[67,true]],
+  Pa: [[16,true],[27,true],[33,true],[39,true],[45,true],[51,true],[57,true],[63,true],[69,true]],
+  Pt: [[17,true],[28,true],[34,true],[40,true],[46,true],[52,true],[58,true],[64,true],[70,true]],
+  Sc: [[18,true],[29,true],[35,true],[41,true],[47,true],[53,true],[59,true],[65,true],[71,true]],
+  Ma: [[19,true],[30,true],[41,true],[52,true],[63,true]]
+};
+
+// Нормы для перевода в T-баллы (сырые баллы -> T)
+// Упрощенная таблица для Мини-мульт
+const norms = {
+  L:  {mean: 3, sd: 1.5},
+  F:  {mean: 4, sd: 2},
+  K:  {mean: 4, sd: 1.5},
+  Hs: {mean: 5, sd: 2},
+  D:  {mean: 6, sd: 2.5},
+  Hy: {mean: 5, sd: 2},
+  Pd: {mean: 5, sd: 2},
+  Pa: {mean: 4, sd: 2},
+  Pt: {mean: 5, sd: 2},
+  Sc: {mean: 4, sd: 2},
+  Ma: {mean: 3, sd: 1.5}
+};
+
+const scaleNames = {
+  L:  'Шкала лжи (L)',
+  F:  'Шкала достоверности (F)',
+  K:  'Шкала коррекции (K)',
+  Hs: 'Ипохондрия (Hs)',
+  D:  'Депрессия (D)',
+  Hy: 'Истерия (Hy)',
+  Pd: 'Психопатия (Pd)',
+  Pa: 'Паранойя (Pa)',
+  Pt: 'Психастения (Pt)',
+  Sc: 'Шизофрения (Sc)',
+  Ma: 'Гипомания (Ma)'
+};
+
+const scaleDescriptions = {
+  L: {
+    low: 'Вы честны с собой и готовы признавать свои слабости. Это признак зрелой личности.',
+    normal: 'У вас нормальный уровень самокритичности. Вы стремитесь выглядеть хорошо, но не в ущерб правде.',
+    high: 'Вы склонны идеализировать себя и скрывать недостатки. Возможно, вы боитесь осуждения.'
+  },
+  F: {
+    low: 'Ваши ответы последовательны и достоверны.',
+    normal: 'Результаты теста можно считать достоверными.',
+    high: 'Возможно, вы отвечали случайно или стремились представить себя хуже. Результат может быть недостоверным.'
+  },
+  K: {
+    low: 'Вы открыты и не склонны к защитным реакциям.',
+    normal: 'У вас нормальный уровень психологической защиты.',
+    high: 'Вы склонны контролировать впечатление о себе и скрывать проблемы.'
+  },
+  Hs: {
+    low: 'Вы не склонны к ипохондрии, хорошо адаптированы к телесным ощущениям.',
+    normal: 'У вас нормальный уровень внимания к здоровью.',
+    high: 'Вы склонны преувеличивать телесные проблемы. Возможно, через болезни вы ищете внимание или уход от трудностей.',
+    critical: 'Высокая ипохондрия. Телесные симптомы могут быть способом выражения психологического дискомфорта.'
+  },
+  D: {
+    low: 'У вас хороший эмоциональный фон, вы оптимистичны.',
+    normal: 'У вас нормальный уровень эмоциональности.',
+    high: 'Вы склонны к подавленности, пессимизму, чувству вины. Возможны периоды депрессивного настроения.',
+    critical: 'Высокий уровень депрессии. Рекомендуется обратиться к специалисту.'
+  },
+  Hy: {
+    low: 'Вы эмоционально зрелы и не склонны к драматизации.',
+    normal: 'У вас нормальный уровень эмоциональной выразительности.',
+    high: 'Вы склонны к драматизации, инфантильности, поиску внимания. Конфликты часто решаете через болезнь.',
+    critical: 'Высокая истеричность. Эмоции могут преобладать над разумом.'
+  },
+  Pd: {
+    low: 'Вы склонны к конформизму и соблюдению норм.',
+    normal: 'У вас нормальный уровень независимости.',
+    high: 'Вы склонны к импульсивности, конфликтам с нормами, эгоцентризму. Возможны проблемы в отношениях.',
+    critical: 'Высокая психопатия. Возможны трудности с контролем поведения.'
+  },
+  Pa: {
+    low: 'Вы доверчивы и не склонны к подозрительности.',
+    normal: 'У вас нормальный уровень критичности.',
+    high: 'Вы склонны к подозрительности, ригидности, чувству несправедливости. Возможны конфликты с окружающими.',
+    critical: 'Высокая паранойяльность. Рекомендуется консультация специалиста.'
+  },
+  Pt: {
+    low: 'Вы уверены в себе и не склонны к тревоге.',
+    normal: 'У вас нормальный уровень тревожности.',
+    high: 'Вы склонны к тревоге, самокопанию, нерешительности. Возможны навязчивые мысли.',
+    critical: 'Высокая психастения. Тревога может мешать повседневной жизни.'
+  },
+  Sc: {
+    low: 'Вы хорошо адаптированы к реальности.',
+    normal: 'У вас нормальный уровень своеобразия мышления.',
+    high: 'Вы склонны к своеобразному мышлению, отчуждению, чувству непонятости. Возможны трудности в общении.',
+    critical: 'Высокие показатели. Рекомендуется консультация специалиста.'
+  },
+  Ma: {
+    low: 'Вы склонны к спокойствию и умеренности.',
+    normal: 'У вас нормальный уровень активности.',
+    high: 'Вы склонны к повышенной активности, импульсивности, оптимизму. Возможны периоды подъема настроения.',
+    critical: 'Высокая гипомания. Возможна расторможенность поведения.'
+  }
+};
+
+let currentQuestion = 0;
+let answers = new Array(71).fill(null);
+
+function startTest() {
+  document.getElementById('screenIntro').classList.add('hidden');
+  document.getElementById('screenQuestion').classList.remove('hidden');
+  showQuestion();
+}
+
+function showQuestion() {
+  const qNum = currentQuestion + 1;
+  document.getElementById('questionNumber').textContent = `Вопрос №${qNum}`;
+  document.getElementById('questionText').textContent = questions[currentQuestion];
+  document.getElementById('progressText').textContent = `Вопрос ${qNum} из 71`;
+  document.getElementById('progressFill').style.width = `${(qNum / 71) * 100}%`;
+}
+
+function answer(value) {
+  answers[currentQuestion] = value;
+  currentQuestion++;
+  if (currentQuestion < 71) {
+    showQuestion();
+  } else {
+    showResults();
+  }
+}
+
+function calculateRawScores() {
+  const scores = {};
+  for (const scale in keys) {
+    let raw = 0;
+    keys[scale].forEach(([qNum, direction]) => {
+      const answer = answers[qNum - 1];
+      if (answer === direction) raw++;
+    });
+    scores[scale] = raw;
+  }
+  return scores;
+}
+
+function rawToT(raw, scale) {
+  const norm = norms[scale];
+  const t = 50 + ((raw - norm.mean) / norm.sd) * 10;
+  return Math.round(Math.max(30, Math.min(80, t)));
+}
+
+function showResults() {
+  document.getElementById('screenQuestion').classList.add('hidden');
+  document.getElementById('screenResult').classList.remove('hidden');
+
+  const rawScores = calculateRawScores();
+  const tScores = {};
+  for (const scale in rawScores) {
+    tScores[scale] = rawToT(rawScores[scale], scale);
+  }
+
+  // Проверка достоверности
+  const L = tScores.L;
+  const F = tScores.F;
+  const K = tScores.K;
+
+  // График
+  let chartHTML = '';
+  const clinicalScales = ['Hs','D','Hy','Pd','Pa','Pt','Sc','Ma'];
+  clinicalScales.forEach(scale => {
+    const t = tScores[scale];
+    const width = Math.min(100, (t - 30) / 50 * 100);
+    chartHTML += `
+      <div class="scale-row">
+        <div class="scale-label">${scaleNames[scale]}</div>
+        <div class="scale-bar-bg">
+          <div class="threshold-line"></div>
+          <div class="scale-bar-fill" style="width:${width}%"></div>
+        </div>
+        <div class="scale-value">${t}</div>
+      </div>
+    `;
+  });
+  document.getElementById('chartBars').innerHTML = chartHTML;
+
+  // Интерпретация
+  let interpHTML = '';
+
+  // Достоверность
+  if (F > 65) {
+    interpHTML += `<div class="interp-block critical"><strong>⚠ Достоверность:</strong> ${scaleDescriptions.F.high}</div>`;
+  } else if (L > 60) {
+    interpHTML += `<div class="interp-block elevated"><strong>⚠ Социальная желательность:</strong> ${scaleDescriptions.L.high}</div>`;
+  } else {
+    interpHTML += `<div class="interp-block normal"><strong>✓ Достоверность:</strong> ${scaleDescriptions.F.normal}</div>`;
+  }
+
+  // Клинические шкалы
+  clinicalScales.forEach(scale => {
+    const t = tScores[scale];
+    let level, cls;
+    if (t < 55) { level = 'low'; cls = 'normal'; }
+    else if (t < 65) { level = 'normal'; cls = 'normal'; }
+    else if (t < 75) { level = 'high'; cls = 'elevated'; }
+    else { level = 'critical'; cls = 'critical'; }
+
+    const desc = scaleDescriptions[scale][level] || scaleDescriptions[scale].normal;
+    interpHTML += `<div class="interp-block ${cls}"><strong>${scaleNames[scale]} (T=${t}):</strong> ${desc}</div>`;
+  });
+
+  document.getElementById('interpretation').innerHTML = interpHTML;
+
+  // Итоговый совет
+  const highScales = clinicalScales.filter(s => tScores[s] >= 65);
+  let advice = '';
+  if (highScales.length === 0) {
+    advice = ' Ваш профиль гармоничен. Все шкалы в пределах нормы. Вы хорошо адаптированы и обладаете здоровой психикой. Продолжайте развивать свои сильные стороны и поддерживать баланс.';
+  } else if (highScales.length <= 2) {
+    const names = highScales.map(s => scaleNames[s].split(' ')[0]).join(', ');
+    advice = `✦ Основные зоны внимания: ${names}. Эти аспекты требуют осознанной работы. Рекомендуется самонаблюдение, возможно — консультация психолога для углубленного анализа.`;
+  } else {
+    advice = '✦ Ваш профиль показывает несколько выраженных зон напряжения. Это не диагноз, но сигнал о необходимости поддержки. Рекомендуется обратиться к квалифицированному психологу или психотерапевту для профессиональной интерпретации.';
+  }
+  document.getElementById('finalAdvice').textContent = advice;
+}
+</script>
+</body>
+</html>
